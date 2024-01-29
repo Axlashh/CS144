@@ -1,3 +1,23 @@
+-----
+
+# 记录本人的cs144学习记录
+
+lab应该是19年的版本，用的是kangyupl大佬的初始文件
+
+网站看的是https://vixbob.github.io/cs144-web-page/，fa20的版本。kangyupl大佬fa19的镜像网站貌似有点问题，有的文件我下不了
+
+希望能学完
+
+### 2024/1/29
+
+做各种初始准备 
+
+git的操作都忘得差不多了，整老半天
+
+接下来看看视频
+
+-----
+
 For build prereqs, see [the CS144 VM setup instructions](https://web.stanford.edu/class/cs144/vm_howto).
 
 ## Sponge quickstart
