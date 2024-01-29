@@ -18,6 +18,23 @@ git的操作都忘得差不多了，整老半天
 
 接下来看看视频
 
+
+29号晚上直接写到30号一点了
+
+结束lab0，小小热身，捡回自己的编程
+
+getURL主要是得读文档，搞清函数都是干嘛的
+
+bytestream就是小小的实现功能，不过花了好长时间debug size_t的问题
+
+size_t是无符号整型，减到负数会溢出，mmd
+
+而且一开始折腾好久配环境，make的时候显示throw out_of_range什么的有问题
+
+最后只要在buffer.hh里加个#include <stdexcept>就好了，真是服
+
+今天还不错，开睡！
+
 -----
 
 For build prereqs, see [the CS144 VM setup instructions](https://web.stanford.edu/class/cs144/vm_howto).
