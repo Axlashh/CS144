@@ -4,7 +4,9 @@
 
 lab应该是19年的版本，用的是kangyupl大佬的初始文件
 
-网站看的是https://vixbob.github.io/cs144-web-page/，fa20的版本。kangyupl大佬fa19的镜像网站貌似有点问题，有的文件我下不了
+网站看的是https://vixbob.github.io/cs144-web-page/
+
+是fa20的版本，kangyupl大佬fa19的镜像网站貌似有点问题，有的文件我下不了
 
 希望能学完
 
