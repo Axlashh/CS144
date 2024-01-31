@@ -39,7 +39,7 @@ bool TCPReceiver::segment_received(const TCPSegment &seg) {
 
 optional<WrappingInt32> TCPReceiver::ackno() const {
     if (!_syn) return {};
-    return _isn + _reassembler.assembled_num() + ((_fin && _reassembler.empty()) ? 1 : 0) + 1;
+    return wrap(_base, _isn);
 }
 
 size_t TCPReceiver::window_size() const { return _capacity - _reassembler.stream_out().buffer_size(); }
