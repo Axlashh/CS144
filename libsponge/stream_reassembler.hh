@@ -20,7 +20,7 @@ class StreamReassembler {
     std::vector<std::pair<char, bool>> _buffer;  //!< The unassembed bytes;
     size_t _assembled_index;  //!< The last assembled byte's index 
     size_t _actual_size;   //!< The actual size of this segment
-    long long _buffer_size;  
+    size_t _buffer_size;  
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
@@ -55,6 +55,8 @@ class StreamReassembler {
     //! \brief Is the internal state empty (other than the output stream)?
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
+
+    size_t assembled_num() const {return _output.bytes_written();};
 };
 
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH

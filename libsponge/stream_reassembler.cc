@@ -18,30 +18,28 @@ StreamReassembler::StreamReassembler(const size_t capacity) : _output(capacity),
 //! possibly out-of-order, from the logical stream, and assembles any newly
 //! contiguous substrings and writes them into the output stream in order.
 void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
+    size_t byrd = _output.bytes_read();
     size_t st = max(index, _assembled_index);
-    size_t ed = min(index + data.size(), _actual_size);
-    if (index + data.size() >= _capacity) {
-        _eof = true;
-    }
+    size_t ed = min(index + data.size(), _actual_size + byrd);
     if (eof && !_eof) {
         _eof = true;
         _actual_size = min(_actual_size, index + data.size());
     }
     for (size_t i = st; i < ed; i++) {
-        if (!_buffer[i].second) _buffer_size++;
-        _buffer[i] = {data[i - index], true};
+        if (!_buffer[i % _capacity].second) _buffer_size++;
+        _buffer[i % _capacity] = {data[i - index], true};
     }
     size_t tmpi = _assembled_index;
     string tmps;
-    while (tmpi < _actual_size && _buffer[tmpi].second) {
-        tmps.push_back(_buffer[tmpi].first);
-        _buffer[tmpi].second = 0;
+    while (tmpi < _actual_size + byrd && _buffer[tmpi % _capacity].second) {
+        tmps.push_back(_buffer[tmpi % _capacity].first);
+        _buffer[tmpi % _capacity].second = 0;
         _buffer_size--;
         tmpi++;
     }
     _assembled_index = tmpi;
     _output.write(tmps);
-    if (_assembled_index >= _actual_size) {
+    if (_eof && empty()) {
         _output.end_input();
     }
 }

@@ -19,13 +19,19 @@ class TCPReceiver {
 
     //! The maximum number of bytes we'll store.
     size_t _capacity;
+    //! The ISN
+    WrappingInt32 _isn;
+    bool _syn;
+    bool _fin;
+    size_t _base;
+
 
   public:
     //! \brief Construct a TCP receiver
     //!
     //! \param capacity the maximum number of bytes that the receiver will
     //!                 store in its buffers at any give time.
-    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity) {}
+    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity), _isn(0), _syn(false), _fin(false), _base(0) {}
 
     //! \name Accessors to provide feedback to the remote TCPSender
     //!@{
@@ -35,7 +41,7 @@ class TCPReceiver {
     //!
     //! This is the beginning of the receiver's window, or in other words, the sequence number
     //! of the first byte in the stream that the receiver hasn't received.
-    std::optional<WrappingInt32> ackno() const;
+    std::optional<WrappingInt32> ackno() const ;
 
     //! \brief The window size that should be sent to the peer
     //!
