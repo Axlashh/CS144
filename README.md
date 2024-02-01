@@ -10,6 +10,70 @@ lab应该是19年的版本，用的是kangyupl大佬的初始文件
 
 希望能学完
 
+### 2024/2/1
+
+今天光看课去了，看得我想睡觉
+
+但是看了一堆，把tcp的go back n 和 selective repeat都看完了，后面貌似是packet switching之类的东西
+
+搞不太懂cs144课程网站里又是怎么安排的，tcp的ppt就几页，然后直接进packet switching，但是项目又全是关于tcp的
+
+应该能写tcp sender了，今天看了一堆，小小写点笔记
+
+- TCP
+  	1. TCP Header
+  
+  	包含一堆field，主要就是source port, destination port, sequence, ackno, checksum和一堆flag
+
+  	2. TCP FSM
+ 
+  	那几个状态，有时间默一遍
+
+  	3. Flow Control
+ 
+  		- Stop and Wait
+ 
+  		太傻了，发出去后等收到ack回应了再发下一个，利用one byte counter来分辨是新的还是重传发的
+
+  		- Go Back N
+ 
+  		发送窗口大小为n，接受窗口大小为1
+
+  		接受窗口会发送连续上升序列的最后一个序号，发送方会发送ackno的后n个segment
+
+		- Selective Repeat
+
+    		发送窗口只重传没有收到确认的segment
+  	  
+- UDP
+
+UDP Header只包含source destination checksum length，相当于给IP做了个wrapper
+
+- ICMP
+
+传输层的一部分，相当于用来给IP传输纠错的
+
+包含IP DATA的前8个字节和IP HEADER，再加上TYPE和CODE用来标识错误信息
+
+可以用来ping和查找传输路径上的router
+
+- 纠错
+	1. checksum
+
+  	IP TCP等 把DATA里的字节相加作为checksum
+
+	2. Cycle Roundency Check
+
+ 	Ethernet等 选取一个generator polynomial，将数据除以G的余数作为CRC段加在后面，接受的时候检查数据除以G的余数是否等于0
+
+  	3. Message Authentication Code
+
+      	TLS等 选一个serect s来生成一段mac，貌似主要是用于确保数据安全的，纠错能力不强
+
+大概就是这些，希望过几天看的时候都能回忆起来
+
+接下来继续写lab
+
 ### 2024/1/31
 
 今天把lab2干完了
