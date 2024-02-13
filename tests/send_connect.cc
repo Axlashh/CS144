@@ -42,7 +42,7 @@ int main() {
             test.execute(ExpectNoSegment{});
             test.execute(ExpectBytesInFlight{0});
         }
-/*
+
         {
             TCPConfig cfg;
             WrappingInt32 isn(rd());
@@ -82,7 +82,7 @@ int main() {
             test.execute(ExpectBytesInFlight{0});
             test.execute(ExpectSeqno{WrappingInt32{isn + 9}});
         }
-*/
+
     } catch (const exception &e) {
         cerr << e.what() << endl;
         return 1;

@@ -20,12 +20,14 @@ using namespace std;
 TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const std::optional<WrappingInt32> fixed_isn)
     : _isn(fixed_isn.value_or(WrappingInt32{random_device()()}))
     , _initial_retransmission_timeout{retx_timeout}
+    , _retransmission_timeout{retx_timeout}
     , _stream(capacity) {}
 
 uint64_t TCPSender::bytes_in_flight() const { return _bytes_in_flight; }
 
 void TCPSender::fill_window() {
-    auto _bytes_sents = _window_size > 0 ? _window_size : 1;
+    auto win = _window_size > 0 ? _window_size : 1;
+    auto _bytes_sents = win - (_next_seqno - _acked_seqno);
     if (_next_seqno == 0) {
         TCPSegment ts;
         ts.header().seqno = wrap(0, _isn);
@@ -34,14 +36,17 @@ void TCPSender::fill_window() {
         _outstnding.push(ts);
         _next_seqno++;
         _bytes_in_flight++;
-        _bytes_sents--;
+        _bytes_sents = win - (_next_seqno - _acked_seqno);
     }
-    while (_bytes_sents > 0) {
+
+    if (_stream.eof() && _next_seqno == _stream.bytes_written() + 2) 
+        return;
+
+    while ((_bytes_sents = win - (_next_seqno - _acked_seqno)) > 0) {
         auto _seg_len = min(_bytes_sents, TCPConfig::MAX_PAYLOAD_SIZE);
         TCPSegment ts;
         ts.payload() = Buffer(_stream.read(_seg_len));
         ts.header().seqno = wrap(_next_seqno, _isn);
-        _bytes_sents -= ts.length_in_sequence_space();
         if (_stream.eof()) {
             ts.header().fin = true;
             _bytes_sents = 0;
@@ -49,7 +54,9 @@ void TCPSender::fill_window() {
         _next_seqno += ts.length_in_sequence_space();
         _bytes_in_flight += ts.length_in_sequence_space();
         if (ts.length_in_sequence_space() == 0) break;
-        _outstnding.push(move(ts));
+        _segments_out.push(ts);
+        _outstnding.push(ts);
+        if (ts.header().fin) break;
     }
 }
 
@@ -65,7 +72,7 @@ bool TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
         return false;
     if (abs_ackno <= _acked_seqno)
         return true;
-    _retransmisson_timeout = _initial_retransmission_timeout;
+    _retransmission_timeout = _initial_retransmission_timeout;
     _consecutive_retransmissions = 0;
     while (1) {
         if (_outstnding.empty()) break;
@@ -73,7 +80,7 @@ bool TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
         if (unwrap(olddest.header().seqno, _isn, 0) + olddest.length_in_sequence_space() <= abs_ackno) {
            _outstnding.pop();
            _bytes_in_flight -= olddest.length_in_sequence_space();
-           _acked_seqno = unwrap(olddest.header().seqno, _isn, 0) + olddest.length_in_sequence_space();
+           _acked_seqno = max(_acked_seqno, unwrap(olddest.header().seqno, _isn, 0) + olddest.length_in_sequence_space());
         } else {
             break;
         }
@@ -87,11 +94,11 @@ bool TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
 void TCPSender::tick(const size_t ms_since_last_tick) {
     _timer += ms_since_last_tick;
-    if (_timer > _retransmisson_timeout) {
+    if (_timer >= _retransmission_timeout) {
         _segments_out.push(_outstnding.front());
         if (_window_size > 0) {
             _consecutive_retransmissions++;
-            _retransmisson_timeout *= 2;
+            _retransmission_timeout *= 2;
         }
         _timer = 0;
     }

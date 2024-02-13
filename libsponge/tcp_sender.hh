@@ -26,7 +26,7 @@ class TCPSender {
 
     //! retransmission timer for the connection
     unsigned int _initial_retransmission_timeout;
-    unsigned int _retransmisson_timeout{0};
+    unsigned int _retransmission_timeout;
     unsigned int _timer{0};
 
     //! outgoing stream of bytes that have not yet been sent
@@ -37,11 +37,10 @@ class TCPSender {
     uint64_t _acked_seqno{0};
 
     uint64_t _consecutive_retransmissions{0};
-    uint64_t _window_size{0};
+    uint64_t _window_size{1};
     uint64_t _bytes_in_flight{0};
 
     bool _timer_running = false;
-    size_t _retransmission_timeout = 0;
     size_t _consecutive_retransmission = 0;
     size_t _recv_ackno = 0;
     bool _syn_flag = false;
