@@ -40,19 +40,8 @@ class TCPSender {
     uint64_t _window_size{1};
     uint64_t _bytes_in_flight{0};
 
-    bool _timer_running = false;
-    size_t _consecutive_retransmission = 0;
-    size_t _recv_ackno = 0;
-    bool _syn_flag = false;
-    bool _fin_flag = false;
-    std::queue<TCPSegment> _segments_outstanding{};
 
   public:
-  /*
-      void send_segment(TCPSegment &seg);
-      void send_empty_segment(WrappingInt32);
-*/
-
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,
               const uint16_t retx_timeout = TCPConfig::TIMEOUT_DFLT,
