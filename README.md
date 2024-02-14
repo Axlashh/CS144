@@ -10,6 +10,110 @@ lab应该是19年的版本，用的是kangyupl大佬的初始文件
 
 希望能学完
 
+### 2024/2/14
+
+今天看了3-1到3-6，看得我困麻了，写点笔记
+
+- Circuit Switching
+
+  	一对一用circuit连接的通信
+
+	1. 每个通信间都是private, guaranteed, isolated
+
+	2. 每次通信都要维护状态
+
+  	问题：
+
+   	1. inefficient，效率低下
+ 
+   	2. 不同通信间速率要求变化大，不好满足
+ 
+   	3. 要维护通信状态
+
+- Packet Switching
+
+	端与端间以packet的形式通信
+
+- Delay
+
+	- Propagation Delay
+
+   		来源于信号在link中传输所带来的延迟
+
+ 		$t_l = \frac{l}{c}$
+
+  		一般来说c取 $2 * 10^8 m/s$
+
+   	- Packetization Delay
+   	
+   	  	一组数据进入link所带来的延迟
+
+		$t_p = \frac{p}{r}$
+
+      	- Queue Delay
+   	 
+   	  	一堆数据在router中排队等待发送带来的延迟，等下详细讨论
+
+- Playback Buffer
+
+  	视频网站这种Real-time application，为了避免Queue Delay波动大带来的不稳定，会缓存
+
+- Queue Model
+
+	- Q(t)
+
+  		假设A(t)为t时刻之前到达queue的bit，D(t)为离开的
+
+  		则Q(t) = A(t) - D(t)，即为t时刻队列中所含的bit数
+
+  		d(t)为垂直的差值，代表同一个bit花了多久离开
+
+  		$\overline{Q}(t) = \frac{\int_0^T{Q(t)}}{T}$  其中T为周期
+
+    	- 不同发送策略的时间差距
+
+		一次发一整个: $t = \sum{\frac{M}{r_i} + \frac{l_i}{c}}$ M代表数据量
+
+		分很多packet: $t = \sum{\frac{p}{r_i} + \frac{l_i}{c}} + (\frac{M}{p} - 1) * \frac{p}{r_{min}}$ p代表每个packet的数据量，$r_{min}$代表传输最慢的那根线
+
+	- Statistical Multiplexing
+
+   		不同数据源传输的峰值时间不太一样，根据实际需求而不是峰值相加来分配输出速率
+
+   		~~我也没太搞懂~~
+
+- Queue Properties
+
+	- Burstiness increases delay
+
+ 	- Determinism minimizes delay
+
+ 	- Little's result
+
+		我一开始不知道Little是个人名，也不知道result有法则的意思，疑惑了半天（
+
+		$L = \lambda W$
+
+		L为队列中的平均信息量，$\lambda$为信息到达的平均速度，W为信息离开的平均速度
+
+	- M/M/1 model
+
+ 		视频里还没讲太清楚，我找了点别的资料
+
+ 		假设进入队列的信息量符合泊松分布($\lambda$)，信息离开的时间符合指数分布($\mu$)
+
+   		则d = $\frac{1}{\mu - \lambda}$
+ 
+   		设 $\rho = \frac{\lambda}{\mu}$ ，代表服务强度
+
+   		$L = \lambda d = \frac{\rho}{1 - \rho}$
+
+有蛮多排队论的知识，真就是学数学了，没想到概率论还能在这里用上
+
+明天争取把第三章看完，再看点第四章，回家就做lab4了
+
+	
+
 ### 2024/2/13
 
 哈哈，解决lab3!
