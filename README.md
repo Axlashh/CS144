@@ -10,6 +10,10 @@ lab应该是19年的版本，用的是kangyupl大佬的初始文件
 
 希望能学完
 
+### 2024/2/15
+
+今天直接麻中麻，没想到后面还难一点，并且好像书上没有相关的内容，随便写了点笔记附在下面了
+
 ### 2024/2/14
 
 今天看了3-1到3-6，看得我困麻了，写点笔记
@@ -107,6 +111,34 @@ lab应该是19年的版本，用的是kangyupl大佬的初始文件
    		设 $\rho = \frac{\lambda}{\mu}$ ，代表服务强度
 
    		$L = \lambda d = \frac{\rho}{1 - \rho}$
+
+- Packet Switch
+
+ 	- 基本要做的事
+
+		1. Lookup addresses in a forwarding table
+
+		2. Switching the correct egress port
+
+ 	- 不同的缓冲策略
+ 
+ 		1. Output Queue
+
+  		2. Input Queue
+ 
+  		3. Virtual Output Queue
+
+	- 不同的入队策略
+
+ 		1. FIFO queue
+
+		2. Strict Priorities
+
+			分为两个队列，一个高优先级一个低优先级，先出高优先级再出低优先级
+
+		3. Weighted Fair Queueing
+
+			......
 
 有蛮多排队论的知识，真就是学数学了，没想到概率论还能在这里用上
 
