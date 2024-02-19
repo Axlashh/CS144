@@ -10,6 +10,62 @@ lab应该是19年的版本，用的是kangyupl大佬的初始文件
 
 希望能学完
 
+### 2024/2/19
+
+今天把第四章 congestion control看完了，写点笔记
+
+接下来应该可以做lab4了
+
+- AIMD (Additive Increase Multiplicative Decrease)
+
+	如果传输正常，接受到ack，则线性增长 (w = w + 1/w)
+
+	如果有丢包，则乘法性的减小 (w = w/2)
+
+	对于single flow来说，若传输瓶颈的速率为c，则当router的buffer size = RTT * c时，利用率可维持在100%
+
+	传输速率 $r = \frac{w}{RTT}$ ，是个常量
+
+	对于multi flow来说，由于buffer可视为一直是满的，则RTT不随窗口大小w的改变而改变
+
+	丢包率 $p = \frac{8}{3 W_{max}^2}$
+
+	传输速率 $r = \frac{A}{\frac{W_{max}}{2} RTT} = \sqrt{\frac{3}{2}}\frac{1}{RTT \sqrt{p}}$
+
+	好处：Chiu Jain Plot
+
+- TCP Tahoe Reno NewReno (放一起得了）
+
+	- slow start
+
+		发送窗口大小以Maximum Segment Size(MSS)开始，进行指数式增长(*2)直到丢包或是3个重复ack或是超过ssthresh
+
+	- Congestion Avoidence
+
+ 		线性增长
+
+   	- RTT Estimate
+ 
+		r为估计值，g为EWMA gain，m为最近一次测量值
+
+		e = m - r
+
+		r = r + g * e
+
+		v = v + g * (|e| - v)
+
+		Timeout = r + $\beta$ v ( $\beta$ = 4)
+
+	- Self Clocking
+
+ 		指的是tcp只会在收到ack后才发送新seg，发送速率与确认速率同步
+
+   	- Fast Recovery and Retransmit
+ 
+		当处于Congestion Avoidence阶段时，若收到大于等于三个重复ack时，则进入快速重传，立即发送未收到的seg，ssthresh设为w/2，若中途还收到重复ack，则窗口大小w加一，直到收到新的ack
+
+		收到新ack后，不是将w设为MSS，而是设为ssthresh，然后继续Congestion Avoidence
+
 ### 2024/2/15
 
 今天直接麻中麻，没想到后面还难一点，并且好像书上没有相关的内容，随便写了点笔记附在下面了
