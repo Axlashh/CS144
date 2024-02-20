@@ -110,6 +110,5 @@ void TCPSender::send_empty_segment() {
     TCPSegment sent;
     sent.header().seqno = wrap(_next_seqno, _isn);
     if (_next_seqno == 0) sent.header().syn = true;
-    if (_stream.eof() && _next_seqno == _stream.bytes_written() + 2) sent.header().fin = true;
     _segments_out.push(sent);
 }

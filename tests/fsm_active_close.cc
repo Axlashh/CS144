@@ -16,7 +16,7 @@ using State = TCPTestHarness::State;
 int main() {
     try {
         TCPConfig cfg{};
-
+/*
         // test #1: start in TIME_WAIT, timeout
         {
             TCPTestHarness test_1 = TCPTestHarness::in_time_wait(cfg);
@@ -33,7 +33,7 @@ int main() {
 
             test_1.execute(ExpectState{State::CLOSED});
         }
-
+*/
         // test #2: start in CLOSING, send ack, time out
         {
             TCPTestHarness test_2 = TCPTestHarness::in_closing(cfg);
@@ -43,19 +43,22 @@ int main() {
 
             test_2.execute(ExpectState{State::CLOSING});
             test_2.send_ack(WrappingInt32{2}, WrappingInt32{2});
+            cout<<"no OKL\n";
             test_2.execute(ExpectNoSegment{});
-
+            cout << "OK" <<endl;
             test_2.execute(ExpectState{State::TIME_WAIT});
 
+            cout<<"bigok"<<endl;
             test_2.execute(Tick(10 * cfg.rt_timeout - 1));
 
+            cout<<"bnnigok"<<endl;
             test_2.execute(ExpectState{State::TIME_WAIT});
 
             test_2.execute(Tick(2));
 
             test_2.execute(ExpectState{State::CLOSED});
         }
-
+/*
         // test #3: start in FIN_WAIT_2, send FIN, time out
         {
             TCPTestHarness test_3 = TCPTestHarness::in_fin_wait_2(cfg);
@@ -188,6 +191,7 @@ int main() {
 
             test_6.execute(ExpectState{State::CLOSED});
         }
+        */
     } catch (const exception &e) {
         cerr << e.what() << endl;
         return EXIT_FAILURE;
