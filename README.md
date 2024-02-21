@@ -10,6 +10,52 @@ lab应该是19年的版本，用的是kangyupl大佬的初始文件
 
 希望能学完
 
+### 2024/2/21
+
+下面做个debug总结
+
+active_close tcp header too short
+
+排查之后发现是tick之后sender认为超时了，于是执行超时重传，但此时没有seg需要重传，于是传了一段奇怪的内存段过去
+
+在超时重传的逻辑增加了重传列表不为空才重传，active_close就过了
+
+passive_close The TCP an extra segment when it should not have
+
+是在test 2中，进入close_wait后tick了4倍超时时间，再close和tick 1ms后检查是否发送了fin时报的错，推测是重传又出问题了
+
+果然是重传的问题，之前写sender的时候偷懒，没写计时器的开关，导致没有发送数据时计时器也会空转，加了个开关，passive_close也过了
+
+t_ack_rst The TCP should have produced a segment that existed, but it did not
+
+这个bug貌似是说当收到了尚未发送的序列号的ACK时，要回一个ack回去???
+
+好像和之前学的不一样，不应该是忽略吗
+
+后面几个测试的意思是只要收到了带有内容的seg，就要回个ack
+
+是文档里写了但我没看见吗，好像之前没有说有这个逻辑
+
+然后到了回复rst的bug，是不能回复窗口以外的rst，并且listen状态时不管rst
+
+test3是各种接收，第一个测试是处于listen状态时，如果只收到ack，则进rst
+
+但我的sender以为进正常传输阶段了，直接崩掉
+
+加了个listen状态的判断后，又发现sender发了两个rst
+
+排查出来是我在unclean_shutdown()里加了一个send_empty_segment，删掉后过了
+
+test4是在syn_sent状态中如果收到带信息的seg，就不管它
+
+如果在syn_sent状态收到只含rst的seg，不管它；如果收到正确的act+rst，进入reset状态但是不发送rst
+
+我服了，细节真的多
+
+ok，现在是凌晨一点，我彻底晕了，单独运行文件跟直接make出来的结果不一样，一边是要求syn_sent状态下，收到不正确的ack就直接rst，并且发送的rst的seqno和接收到的ackno一样，和在listen状态下，收到ack就直接rst；另一边是这两个情况下都不管。我已经麻了，网上关于这些方面的资料还少，代码已经成屎山了，很绝望。mmd，先把make过了再说
+
+
+
 ### 2024/2/20
 
 tm这个lab4不如杀了我

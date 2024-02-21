@@ -106,7 +106,7 @@ int main() {
 
             test_1.execute(ExpectOneSegment{}.with_ack(true).with_ackno(base_seq + 1), "test 1 failed: bad ACK");
 
-            // segment not in window with RST set --- should get nothing back
+            // segment not in window with RST set --- shoata bytes "<1>"
             test_1.send_rst(base_seq);
             test_1.send_rst(base_seq + cfg.recv_capacity + 1);
             test_1.execute(ExpectNoSegment{}, "test 1 failed: got a response to an out-of-window RST");

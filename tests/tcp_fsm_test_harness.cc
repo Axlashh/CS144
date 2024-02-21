@@ -307,5 +307,6 @@ TCPTestHarness TCPTestHarness::in_time_wait(const TCPConfig &cfg,
     TCPTestHarness h = in_fin_wait_1(cfg, tx_isn, rx_isn);
     h.send_fin(rx_isn + 1, tx_isn + 2);
     h.execute(ExpectOneSegment{}.with_no_flags().with_ack(true).with_ackno(rx_isn + 2));
+    cout<<"aaa"<<endl;
     return h;
 }
