@@ -50,7 +50,7 @@ test3是各种接收，第一个测试是处于listen状态时，如果只收到
 
 加了个listen状态的判断后，又发现sender发了两个rst
 
-排查出来是我在unclean_shutdown()里加了一个send_empty_segment，删掉后过了
+排查出来是我在unclean_shutdown()里加了一个send_empty_segment()，删掉后过了
 
 test4要求在syn_sent状态中如果收到带信息的seg，就不管它
 
