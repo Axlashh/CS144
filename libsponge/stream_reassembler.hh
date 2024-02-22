@@ -57,6 +57,8 @@ class StreamReassembler {
     bool empty() const;
 
     size_t assembled_num() const {return _output.bytes_written();};
+    size_t head_index() const { return _output.bytes_written(); }
+    bool input_ended() const { return _output.input_ended(); }
 };
 
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH

@@ -31,7 +31,18 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
             unclean_shutdown();
         return;
     }
-    //syn_sent with bad ack
+
+    bool recv_ok = _receiver.segment_received(seg);
+    bool send_emp = false;
+    if (!recv_ok) send_emp = true;
+    if (seg.header().syn) {
+        if (!_listening && !seg.header().ack) {
+            send_emp = true;
+        }
+        _listening = false;
+        _isn = seg.header().seqno;
+    }
+    //syn_sent with bad ack ,ignore
     if (syn_sent() && unwrap(_sender.next_seqno(), seg.header().ackno, 0)) {
         // unclean_shutdown();
         // TCPSegment ts;
@@ -40,31 +51,28 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         // _segments_out.push(ts);
         return;
     }
+    //syn_sent with data ,ignore
     if (!_receiver.ackno().has_value() && seg.payload().size() != 0) {
         return;
     }
+    //listen with ack, ignore
     if (_listening && !seg.header().syn) {
-        //unclean_shutdown();
+        // unclean_shutdown();
         return;
     }
-    _receiver.segment_received(seg);
-    bool send_emp = false;
     if (seg.payload().size() != 0) {
         send_emp = true;
-    }
-    if (seg.header().syn) {
-        _listening = false;
-        _isn = seg.header().seqno;
     }
     if (_listening)
         return;
     if (seg.header().ack) {
         _sender.ack_received(seg.header().ackno, seg.header().win);
-        if (unwrap(seg.header().ackno, _isn, 0) > _sender.next_seqno_absolute()) {
+        if (unwrap(seg.header().ackno, _sender.get_isn(), 0) > _sender.next_seqno_absolute() || 
+        (_sender.next_seqno_absolute() > 0 && _sender.bytes_in_flight() == _sender.next_seqno_absolute() && !recv_ok)) {
             send_emp = true;
         }
     }
-    if (send_emp || seg.header().syn || seg.header().fin) {
+    if ((send_emp || seg.header().syn || seg.header().fin) && _sender.next_seqno_absolute() != 0) {
         _sender.send_empty_segment();
     }
     send_out();
@@ -81,20 +89,16 @@ size_t TCPConnection::write(const string &data) {
 
 //! \param[in] ms_since_last_tick number of milliseconds since the last call to this method
 void TCPConnection::tick(const size_t ms_since_last_tick) {
-    _time_last += ms_since_last_tick;
     try_clean_shutdown();
     _sender.tick(ms_since_last_tick);
     if (_sender.consecutive_retransmissions() > _cfg.MAX_RETX_ATTEMPTS) {
-        if (_sender.segments_out().empty()) {
-            _sender.send_empty_segment();
-        }
-        auto ts = _sender.segments_out().front();
-        _sender.segments_out().pop();
-        ts.header().rst = true;
-        _segments_out.push(ts);
+        unclean_shutdown();
         return;
     }
-    send_out();
+    if (!_listening) {
+        _time_last += ms_since_last_tick;
+        send_out();
+    }
 }
 
 void TCPConnection::end_input_stream() {
@@ -165,7 +169,7 @@ void TCPConnection::unclean_shutdown(bool send_rst) {
 }
 
 bool TCPConnection::syn_sent() {
-    return _sender.next_seqno_absolute() > 0 && _sender.bytes_in_flight() == _sender.next_seqno_absolute();
+    return _sender.next_seqno_absolute() > 0 && _sender.bytes_in_flight() == _sender.next_seqno_absolute() && !_receiver.ackno().has_value();
 }
 
 // #include "tcp_connection.hh"

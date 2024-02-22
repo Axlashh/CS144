@@ -62,7 +62,7 @@ int main() {
             test_2.execute(Tick(1));
 
             test_2.expect_seg(ExpectOneSegment{}.with_syn(false).with_ack(true).with_ackno(isn + 1),
-                              "test 2 failed: bad ACK for SYN");
+                              "test 2 failed: bad AsssCK for SYN");
 
             test_2.execute(ExpectState{State::SYN_RCVD});
 

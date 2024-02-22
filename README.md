@@ -14,19 +14,25 @@ lab应该是19年的版本，用的是kangyupl大佬的初始文件
 
 下面做个debug总结
 
-active_close tcp header too short
+- active_close
+
+tcp header too short
 
 排查之后发现是tick之后sender认为超时了，于是执行超时重传，但此时没有seg需要重传，于是传了一段奇怪的内存段过去
 
 在超时重传的逻辑增加了重传列表不为空才重传，active_close就过了
 
-passive_close The TCP an extra segment when it should not have
+- passive_close
+
+The TCP an extra segment when it should not have
 
 是在test 2中，进入close_wait后tick了4倍超时时间，再close和tick 1ms后检查是否发送了fin时报的错，推测是重传又出问题了
 
 果然是重传的问题，之前写sender的时候偷懒，没写计时器的开关，导致没有发送数据时计时器也会空转，加了个开关，passive_close也过了
 
-t_ack_rst The TCP should have produced a segment that existed, but it did not
+- t_ack_rst
+
+The TCP should have produced a segment that existed, but it did not
 
 这个bug貌似是说当收到了尚未发送的序列号的ACK时，要回一个ack回去???
 
@@ -34,9 +40,9 @@ t_ack_rst The TCP should have produced a segment that existed, but it did not
 
 后面几个测试的意思是只要收到了带有内容的seg，就要回个ack
 
-是文档里写了但我没看见吗，好像之前没有说有这个逻辑
+是文档里写了但我没看见吗，好像之前没有说有这个逻辑，加了之后过了部分
 
-然后到了回复rst的bug，是不能回复窗口以外的rst，并且listen状态时不管rst
+然后到了回复rst的bug，是不能回复窗口以外的rst，并且listen状态时不管rst，改了之后过了
 
 test3是各种接收，第一个测试是处于listen状态时，如果只收到ack，则进rst
 
@@ -46,7 +52,7 @@ test3是各种接收，第一个测试是处于listen状态时，如果只收到
 
 排查出来是我在unclean_shutdown()里加了一个send_empty_segment，删掉后过了
 
-test4是在syn_sent状态中如果收到带信息的seg，就不管它
+test4要求在syn_sent状态中如果收到带信息的seg，就不管它
 
 如果在syn_sent状态收到只含rst的seg，不管它；如果收到正确的act+rst，进入reset状态但是不发送rst
 
@@ -54,7 +60,70 @@ test4是在syn_sent状态中如果收到带信息的seg，就不管它
 
 ok，现在是凌晨一点，我彻底晕了，单独运行文件跟直接make出来的结果不一样，一边是要求syn_sent状态下，收到不正确的ack就直接rst，并且发送的rst的seqno和接收到的ackno一样，和在listen状态下，收到ack就直接rst；另一边是这两个情况下都不管。我已经麻了，网上关于这些方面的资料还少，代码已经成屎山了，很绝望。mmd，先把make过了再说
 
+好好好，找到原因了，make里面用的是fsm_ack_rst_relaxed这个文件，要求的是宽松判断，不需要回rst，但我一直对着fsm_ack_rst这个文件来改，是比较严格的判定。这下给我整不会了，怪不得在大佬们的代码里也没翻到这个逻辑，原来是压根就没有，还是按make的要求来吧，自己知道什么时候回rst就好。
 
+改成了listen状态下忽略ack和syn_sent状态下忽略错误的ack，t_ack_rst过了
+
+- t_connect
+
+这次我学聪明了，先确定他用的文件是relaxed版本
+
+如果在syn_sent状态下，先收到单独的syn，是要回一个ack进入syn_recv状态的，但我没回
+
+加了判断进入syn_recv的逻辑后解决这个bug
+
+又接着说我在syn_recv状态下收到ack后回了个ack，查半天发现是我把双方的isn搞混了，应该是我们的isn和我们的seqno和对方的ackno是一起的，结果我用对方的isn来unwrap对方的ackno，这个bug才查出来真是个奇迹，改完后t_connect过了
+
+- t_listen
+
+在listen状态下tick后我主动发送了syn，改成listen状态下的tick不发送syn
+
+接着是listen状态下接收到syn后多发了seg，发现是我检测到接收到的seg有syn就发送一个空seg，调用_sender的fill_window()后sender检测到没发过syn，就又发了一个syn，改掉后好了
+
+接着是syn_recv状态下关于接收到的ack的问题，如果seqno不对，则不连接并回复一个ack，只有seqno和ackno都对的情况下才进入established状态。
+
+tm改死我了，真的是写了一坨屎山，不敢乱动，动一下就出问题，最后是在reciver里加了length_in_sequence_space() == 0并且seqno == 窗口右端（合法的ack）的情况下就认为这个seq合法，并且只要接收的seg不对就要回个ack，才过的
+
+这里写完之后通过率大幅上升，终于看到一点希望了TAT，虽然还是只有百分之五十几（
+
+- t_retx
+
+发现是反复超时那里有问题，是我之前把unclean_shutdown学大佬的封装成了一个函数，结果反复超时的那里没调用这个函数，用的是之前错误的写法，改掉之后就过了
+
+- 真实通信
+
+然后貌似有文件的test就都通过了，我暴风哭泣，check但是貌似还有大问题，t_i开头的测试统统failed，t_u的128K_8K也统统timeout，应该就是两个问题，报的错都一样，但nm怎么找啊
+
+我试着把connection和sender都替换成大佬的，发现超时问题解决了，但是还是统统failed，全部替换完还是都failed...
+
+根据huangrt01大佬的指示
+
+* “c” means your code is the client (peer that sends the first syn)
+* “s” means your code is the server.  
+* “u” means it is testing TCP-over-UDP
+* “i” is testing TCP-over-IP(TCP/IP). 
+* “n” means it is trying to interoperate with Linux’s TCP implementation
+* “S” means your code is sending data
+* “R” means your code is receiving data
+* “D” means data is being sent in bothdirections
+* lowercase “l” means there is packet loss on the receiving (incoming segment) direction
+* uppercase “L” means there is packet loss on the sending (outgoing segment) direction.
+
+结果重启之后t_i没问题了，出现大约十几个timeout，均是在128K_8K有丢包情况下出现的问题
+
+典型报错如下
+
+```
+DEBUG: Connecting to 169.254.144.1:2781... done.
+DEBUG: Inbound stream from 169.254.144.1:2781 finished cleanly.
+DEBUG: Outbound stream to 169.254.144.1:2781 finished (52272 bytes still in flight).
+```
+
+根据Kiprey大佬的指示，使用wireshark进行了抓包再分析
+
+分析出来貌似是传输发生丢包时，tcp会先猛发送，直至把窗口填满，窗口大小往往都很大，就导致每次塞完窗口后，都会有三四个丢包。但是接收方当窗口满时，有时会把自己的窗口翻倍，而发送方会优先往后发送，而不是重传。这导致当sender发送完时，往往还会有三四个丢包，但sender只会重传一个，然后就结束链接了。所以我猜测是重传方面出问题
+
+OK!!!OK!!!我nm哭了，对着大佬的代码一行一行看，改出来了！！！bug原因是我收到ack后，会把计时器停止，直到下一次发送新seg时再开启。但是到最后只有几个等待重传的seg时，sender收到一个ack，就停止计时了，导致后面的seg都没法重传。把逻辑改为函数结束时判断还有没有未接收的seg，如果有就启动计时器，然后就全部通过啦哈哈哈！！！（虽然我的sender现在已经快是一比一复刻huangrt01大佬的了）
 
 ### 2024/2/20
 

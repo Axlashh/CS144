@@ -30,8 +30,9 @@ bool TCPReceiver::segment_received(const TCPSegment &seg) {
         ret = true;
     }
 
-    if (_base + window_size() - 1 < t || t + seg.payload().size() - 1 < _base) {
-        if (seg.header().rst && t == _base) return true;
+    if (seg.length_in_sequence_space() == 0 && t == _base) return true;
+    if (_base + window_size() - 1 < t || t + seg.payload().size()  < _base + 1) {
+        if ((seg.header().rst) && t == _base) return true;
         if (!ret) return false;
     }
     _reassembler.push_substring(seg.payload().copy(),t - 1, th.fin);

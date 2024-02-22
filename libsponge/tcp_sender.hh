@@ -97,6 +97,10 @@ class TCPSender {
     //! \brief relative seqno for the next byte to be sent
     WrappingInt32 next_seqno() const { return wrap(_next_seqno, _isn); }
     //!@}
+
+    bool no_ack() const { return _acked_seqno == 0;}
+
+    WrappingInt32 get_isn() const { return _isn; }
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH
@@ -205,6 +209,7 @@ class TCPSender {
 //     //! \brief relative seqno for the next byte to be sent
 //     WrappingInt32 next_seqno() const { return wrap(_next_seqno, _isn); }
 //     //!@}
+//     WrappingInt32 get_isn() const { return _isn; }
 // };
 
 // #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH

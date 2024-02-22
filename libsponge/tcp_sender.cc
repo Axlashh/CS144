@@ -75,6 +75,7 @@ bool TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
         return false;
     if (abs_ackno <= _acked_seqno)
         return true;
+    _acked_seqno = abs_ackno;
     _retransmission_timeout = _initial_retransmission_timeout;
     _consecutive_retransmissions = 0;
     _timer_running = false;
@@ -85,12 +86,14 @@ bool TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
         if (unwrap(olddest.header().seqno, _isn, 0) + olddest.length_in_sequence_space() <= abs_ackno) {
            _outstnding.pop();
            _bytes_in_flight -= olddest.length_in_sequence_space();
-           _acked_seqno = max(_acked_seqno, unwrap(olddest.header().seqno, _isn, 0) + olddest.length_in_sequence_space());
         } else {
             break;
         }
     }
     fill_window();
+    if (!_outstnding.empty()) {
+        _timer_running = true;
+    }
     return true;
 }
 
